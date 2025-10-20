@@ -58,7 +58,7 @@ public class RobotTest : MonoBehaviour
         J5string.text = Mathf.Round(J5Angle).ToString();
         J6string.text = Mathf.Round(-J6Angle).ToString();
 
-        // EE position
+        // EE position///
         Xstring.text = ((EndEffector.transform.position.z - BaseOrigin.transform.position.z) * 1000).ToString();
         Ystring.text = ((EndEffector.transform.position.x - BaseOrigin.transform.position.x) * 1000).ToString();
         Zstring.text = ((EndEffector.transform.position.y - BaseOrigin.transform.position.y) * 1000).ToString();*/
