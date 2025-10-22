@@ -19,13 +19,6 @@ public class InverseKin : MonoBehaviour
     public bool realtime = false;
     private List<float?[]> points;
     private bool move = false;
-    //private bool flagwork = false;
-   // private float[] q = new float[6]; // start joints orientation
-
-   // private float[] qm = new float[6]; // trajectory
-
-    //public float q01, q02, q03, q04, q05, q06;
-
     private float thetha1, thetha2, thetha3, thetha4, thetha5, thetha6;
 
     // point to calculate ik
@@ -34,9 +27,6 @@ public class InverseKin : MonoBehaviour
 
     public bool RobotOperate;
 
-    //private float Tm= 40; // trajectory steps
-
-    // links length
     private float L1 = 177.19f*2.54f;
     private float L2 = 175.98f*2.54f;
     private float L3 = 448.51f*2.54f;
@@ -68,9 +58,6 @@ public class InverseKin : MonoBehaviour
         oy = point.x * 1000;
         oz = (point.y - 0.4f) * 1000;
         ox = point.z * 1000;
-        /* ox = float.Parse(NewX.text, CultureInfo.InvariantCulture);
-         oy = float.Parse(NewY.text, CultureInfo.InvariantCulture);
-         oz = float.Parse(NewZ.text, CultureInfo.InvariantCulture);*/
         if (!move && checkNewXYZ())
         {
             CalculateIK();
@@ -237,7 +224,6 @@ public class InverseKin : MonoBehaviour
                 if (!realtime)
                 {
                     addPointsList();
-                    //points.Add(new float[] { thetha1, thetha2, thetha3, thetha4, thetha5, thetha6 });
                 }
                 
                 print("End");
@@ -249,44 +235,6 @@ public class InverseKin : MonoBehaviour
                 UnityEngine.Debug.LogWarning("Выход за пределы расчетов!");
 
             }
-            
-            // ModifyRobot(thetha1, thetha2, thetha3, thetha4, thetha5, thetha6);
-
-            /*q[0] = thetha1;
-            q[1] = thetha2;
-            q[2] = thetha3;
-            q[3] = thetha4;
-            q[4] = thetha5;
-            q[5] = thetha6;
-
-            qm[0] = (q[0] - q01) / Tm;
-            qm[1] = (q[1] - q02) / Tm;
-            qm[2] = (q[2] - q03) / Tm;
-            qm[3] = (q[3] - q04) / Tm;
-            qm[4] = (q[4] - q05) / Tm;
-            qm[5] = (q[5] - q06) / Tm;
-            qm[0] = (q[0] - q01);
-            qm[1] = (q[1] - q02);
-            qm[2] = (q[2] - q03);
-            qm[3] = (q[3] - q04);
-            qm[4] = (q[4] - q05);
-            qm[5] = (q[5] - q06);
-            
-            /*print(thetha1);
-            print(thetha2);
-            print(thetha3);
-            print(thetha4);
-            print(thetha5);
-            print(thetha6);
-            if (checkRotate())
-            {
-                StartCoroutine(LoopWithDelay(q01, q02, q03, q04, q05, q06));
-            }
-            else
-            {
-                UnityEngine.Debug.LogError("Выход за пределы расчетов!");
-                flagwork = false;
-            }*/
         }
         catch(Exception e)
         {
@@ -296,32 +244,6 @@ public class InverseKin : MonoBehaviour
          
     }
 
-   /* public void BackToInitPos() // function to move robot tot initial position
-    {
-        thetha1 = 0;
-        thetha2 = 90;
-        thetha3 = 90;
-        thetha4 = 0;
-        thetha5 = -90;
-        thetha6 = 0;
-
-        q[0] = thetha1;
-        q[1] = thetha2;
-        q[2] = thetha3;
-        q[3] = thetha4;
-        q[4] = thetha5;
-        q[5] = thetha6;
-
-        qm[0] = (q[0] - q01) / Tm;
-        qm[1] = (q[1] - q02) / Tm;
-        qm[2] = (q[2] - q03) / Tm;
-        qm[3] = (q[3] - q04) / Tm;
-        qm[4] = (q[4] - q05) / Tm;
-        qm[5] = (q[5] - q06) / Tm;
-
-        RobotOperate = true;
-        StartCoroutine(LoopWithDelay(q01, q02, q03, q04, q05, q06));
-    }*/
     bool checkRotate()
     {
         if (float.IsNaN(thetha1) || float.IsNaN(thetha2) || float.IsNaN(thetha3)|| float.IsNaN(thetha4) ||
@@ -339,34 +261,6 @@ public class InverseKin : MonoBehaviour
     {
         RobotOperate = false;
     }
-
-    /* System.Collections.IEnumerator LoopWithDelay(float q01, float q02, float q03, float q04, float q05, float q06)
-     {
-         for (int i = 1; i <= Tm; i++)
-         {
-             if (RobotOperate)
-             {
-                 q01 += qm[0]; q02 += qm[1]; q03 += qm[2]; q04 += qm[3]; q05 += qm[4]; q06 += qm[5];
-             }
-
-             thetha1 = q01;
-             thetha2 = q02;
-             thetha3 = q03;
-             thetha4 = q04;
-             thetha5 = q05;
-             thetha6 = q06;
-             ModifyRobot(q01, q02, q03, q04, q05, q06);
-
-             yield return new WaitForSeconds(0.05f); // how fast robot moves
-
-             if (!RobotOperate)
-             {
-                 flagwork = false;
-                 yield break;
-             }
-         }
-         flagwork = false;
-     }*/
 
     private IEnumerator ModifyRobot(List<float?[]> points)
     {
@@ -398,63 +292,10 @@ public class InverseKin : MonoBehaviour
         robotIns.J5Angle = thetha5;
         robotIns.J6Angle = thetha6;
     }
-    /*while (true)
-    {
-        if (q01 != q[0])
-        {
-            robotIns.J1Angle = q[0];
-            q01 = q[0];
-        }
-        if (q02 != q[1])
-        {
-            robotIns.J2Angle = q[1];
-            q02 = q[1];
-        }
-        if (q03 != q[2])
-        {
-            robotIns.J3Angle = q[2];
-            q03 = q[2];
-        }
-        if (q04 != q[3])
-        {
-            robotIns.J4Angle = q[3];
-            q04 = q[3];
-        }
-        if (q05 != q[4])
-        {
-            robotIns.J5Angle = q[4];
-            q05 = q[4];
-        }
-        if(q06 != q[5])
-        {
-            robotIns.J6Angle = q[5];
-            q06 = q[5];
-        }
-         yield return new WaitForSeconds(0.01f);*/
-
-
-    /*RobotTest robotIns = configRobot.GetComponent<RobotTest>();
-
-    robotIns.J1Angle = a1;
-    robotIns.J2Angle = a2;
-    robotIns.J3Angle = a3;
-    robotIns.J4Angle = a4;
-    robotIns.J5Angle = a5;
-    robotIns.J6Angle = a6;
-
-    q01 = thetha1;
-    q02 = thetha2;
-    q03 = thetha3;
-    q04 = thetha4;
-    q05 = thetha5;
-    q06 = thetha6;*/
-
     float?[] oldPoints = new float?[6];
     void addPointsList()
     {
-       // points.Add(new float?[]{thetha1, thetha2, thetha3, thetha4, thetha5, thetha6 });
         float?[] angles = { null, null, null, null, null, null };
-        //oldPoints = new float?[] {thetha1 , thetha2, thetha3, thetha4, thetha5, thetha6};
         if (thetha1 >= -175 & thetha1 <= 175)
         {
             angles[0] = thetha1;
