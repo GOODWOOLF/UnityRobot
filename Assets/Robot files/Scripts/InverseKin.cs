@@ -32,13 +32,15 @@ public class InverseKin : MonoBehaviour
     private float L3 = 448.51f*2.54f;
     private float L4 = 142.04f*2.54f;
     private float L5 = 534.97f*2.54f;
-    private float L6 = 277.59f*2.54f;
+    private float L6 = 277.59f * 2.54f;
 
     // to calculate inverse kin manually
+    private Vector3 point;
     public GameObject POINT;
-     private Vector3 point;
     public GameObject RobotBase;
     public GameObject configRobot;
+    public float step = 100;
+    public float time = 0;
 
     void Start()
     {
@@ -60,6 +62,7 @@ public class InverseKin : MonoBehaviour
         ox = point.z * 1000;
         if (!move && checkNewXYZ())
         {
+            PointColor();
             CalculateIK();
             old_ox = ox;
             old_oy = oy;
@@ -103,12 +106,12 @@ public class InverseKin : MonoBehaviour
         float distance = Vector3.Distance(start, end);
         print("Дистанция:" + distance);
         float traveled = 0f;
-        float step = 100f;
+        float _step = step;
         if (!realtime)
         {
             while (traveled < distance)
             {
-                float sizeVector = Mathf.Min(step, distance - traveled);// раст между кажд точкой
+                float sizeVector = Mathf.Min(_step, distance - traveled);// раст между кажд точкой
                 current += direction * sizeVector;
                 ox = current.x;
                 oy = current.y;
@@ -233,6 +236,7 @@ public class InverseKin : MonoBehaviour
             else
             {
                 UnityEngine.Debug.LogWarning("Выход за пределы расчетов!");
+                POINT.GetComponent<Renderer>().material.color = Color.red;
 
             }
         }
@@ -276,7 +280,7 @@ public class InverseKin : MonoBehaviour
                 robotIns.J4Angle = p[3] ?? robotIns.J4Angle;
                 robotIns.J5Angle = p[4] ?? robotIns.J5Angle;
                 robotIns.J6Angle = p[5] ?? robotIns.J6Angle;
-                yield return new WaitForSeconds(0);
+                yield return new WaitForSeconds(time);
             }
 
         }
@@ -353,4 +357,16 @@ public class InverseKin : MonoBehaviour
         points.Add(angles);
     }
 
+    private void PointColor()
+    {
+        Renderer rend = POINT.GetComponent<Renderer>();
+        if (rend.material.color == Color.white)
+        {
+            rend.material.color = Color.red;
+        }
+        else
+        {
+            rend.material.color = Color.white;
+        }
+    }
 }
