@@ -1,62 +1,73 @@
-using System.Collections;
-using System.Drawing;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
-
+using System.Linq;
+using System.Collections;
+using UnityEditor.PackageManager;
 public class logics : MonoBehaviour
 {
-    public GameObject point1;
-    public GameObject point2;
-    public GameObject magnit_1;
-    public GameObject magnit_2;
-    public GameObject Base;
-    public Vector3[] points = { new Vector3(0.187999994f, 0.252999991f, -0.708000004f),
-    new Vector3(0.187999994f,0.490999997f,-0.708000004f),
-    new Vector3(-0.984000027f,0.565999985f,0.317999989f),
-    new Vector3(-0.984000027f,0.252999991f,0.317999989f)
-    };
-    private Magnit magnit1;
-    private Magnit magnit2;
+
+
+    public GameObject Robot1IK;
+    public GameObject Robot1Points;
+    public GameObject Robot1Magnit;
+    public GameObject Robot2Magnit;
+
+
+    private List<GameObject> R1PointsList;
+    //private List<GameObject> PointsR2 = new();
+    private InverseKin R1IK;
+    private bool R1End = false;
+    private InverseKin R2IK;
+    private Magnit R1Magnit;
+    private Magnit R2Magnit;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        magnit1 = magnit_1.GetComponent<Magnit>();
-         magnit2 = magnit_2.GetComponent<Magnit>();
-        StartCoroutine(act());
-    }
+        R1Magnit = Robot1Magnit.GetComponent<Magnit>();
+        //R2Magnit = magnit_2.GetComponent<Magnit>();
+        R1IK = Robot1IK.GetComponent<InverseKin>();
+        // IKR2 = Robot2.GetComponent<InverseKin>();
+        R1PointsList = GetChildren(Robot1Points);
+        R1IK.RobotMoveEnd += robotStatus;
 
-    // Update is called once per frame
-    void Update()
-    {
+        StartCoroutine(cr());
     }
-    IEnumerator act()
+    
+     private List<GameObject> GetChildren(GameObject parent)
     {
+        List<GameObject> children = new List<GameObject>();
+        children = Enumerable.Range(0, parent.transform.childCount)
+                            .Select(i => parent.transform.GetChild(i).gameObject)
+                            .OrderBy(i => i.name).ToList();
+        return children;
+    }
+    // Update is called once per frame
+    private void robotStatus()
+    {
+
+        R1End = true;
+        UnityEngine.Debug.LogError("Событие конца");
+    }
+    IEnumerator cr()
+    {
+
         while (true)
         {
-            point1.transform.position = Base.transform.position + points[0];
-        yield return new WaitForSeconds(3);
-        magnit1.magnitOn = true;
-        yield return new WaitForSeconds(2);
-        point1.transform.position = Base.transform.position + points[1];
-        yield return new WaitForSeconds(2);
-        point1.transform.position = Base.transform.position + points[3];
-        yield return new WaitForSeconds(4);
-        magnit1.magnitOn = false;
-        yield return new WaitForSeconds(0.5f);
-        point1.transform.position = Base.transform.position + new Vector3(0.238000005f, 1.15499997f, -0.621999979f);
-
-        point2.transform.position = Base.transform.position + points[3];
-        yield return new WaitForSeconds(3);
-        magnit2.magnitOn = true;
-        yield return new WaitForSeconds(2);
-        point2.transform.position = Base.transform.position + points[2];
-         yield return new WaitForSeconds(2);
-        point2.transform.position = Base.transform.position + points[0];
-        yield return new WaitForSeconds(4);
-        magnit2.magnitOn = false;
-        yield return new WaitForSeconds(0.5f);
-        point2.transform.position = Base.transform.position + new Vector3(-1.04299998f,1.15499997f,-0.0829999968f);
+            foreach (GameObject point in R1PointsList)
+            {
+                R1End = false;
+                UnityEngine.Debug.LogError(point.name+"---"+point.GetComponent<pointConfig>().magnitStatus);
+                pointConfig pConf = point.GetComponent<pointConfig>();
+                R1IK.StartMove(point);
+                yield return new WaitUntil(() => R1End);
+                UnityEngine.Debug.LogError("Воздействие на магнит");
+                R1Magnit.magnitOn = pConf.magnitStatus == MagnitS.On ? true : 
+                                    pConf.magnitStatus == MagnitS.Off ? false : 
+                                    R1Magnit.magnitOn;
+                yield return new WaitForSeconds(pConf.delay);  
+            }
         }
         
+
     }
 }
