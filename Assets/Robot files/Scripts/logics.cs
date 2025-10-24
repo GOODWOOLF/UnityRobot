@@ -3,7 +3,6 @@ using UnityEngine;
 using System.Linq;
 using System.Collections;
 using UnityEditor.PackageManager;
-using S7.Net;
 public class logics : MonoBehaviour
 {
 
@@ -51,7 +50,6 @@ public class logics : MonoBehaviour
     }
     IEnumerator cr()
     {
-        var pc = new Plc(CpuType.S71200,"127.0.0.1", 1, 1);
 
         while (true)
         {
