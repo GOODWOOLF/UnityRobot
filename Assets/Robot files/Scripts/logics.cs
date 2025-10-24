@@ -20,6 +20,7 @@ public class logics : MonoBehaviour
     private InverseKin R2IK;
     private Magnit R1Magnit;
     private Magnit R2Magnit;
+    private bool isWorking = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -30,7 +31,7 @@ public class logics : MonoBehaviour
         R1PointsList = GetChildren(Robot1Points);
         R1IK.RobotMoveEnd += robotStatus;
 
-        StartCoroutine(cr());
+        
     }
     
      private List<GameObject> GetChildren(GameObject parent)
@@ -41,17 +42,22 @@ public class logics : MonoBehaviour
                             .OrderBy(i => i.name).ToList();
         return children;
     }
+    public void StartWork()
+    {
+        isWorking = true;
+        StartCoroutine(cr());
+    }
+
+    public bool IsWorking => isWorking;                         
     // Update is called once per frame
     private void robotStatus()
     {
-
         R1End = true;
         UnityEngine.Debug.LogError("Событие конца");
     }
     IEnumerator cr()
     {
-
-        while (true)
+        while (isWorking)
         {
             foreach (GameObject point in R1PointsList)
             {
@@ -66,6 +72,7 @@ public class logics : MonoBehaviour
                                     R1Magnit.magnitOn;
                 yield return new WaitForSeconds(pConf.delay);  
             }
+            isWorking = false;
         }
         
 
