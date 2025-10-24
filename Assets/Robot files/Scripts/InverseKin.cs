@@ -48,11 +48,20 @@ public class InverseKin : MonoBehaviour
     void Start()
     {
         CalculatePoint(POINT);
+        CalculateVector();
         old_ox = ox;
         old_oy = oy;
         old_oz = oz;
     }
-
+    /*void FixedUpdate()
+    {
+        CalculatePoint(POINT);
+        PointColorOk();
+        CalculateVector();
+        old_ox = ox;
+        old_oy = oy;
+        old_oz = oz;
+    }*/
     public void StartMove(GameObject p)
     {
         CalculatePoint(p);
