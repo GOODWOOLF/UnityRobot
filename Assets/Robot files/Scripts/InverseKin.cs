@@ -16,22 +16,25 @@ using UnityEditor.PackageManager;
 
 public class InverseKin : MonoBehaviour
 {
-    public bool realtime = false;
-    private List<float?[]> points;
+    public event System.Action RobotMoveEnd;
+
+    private float step = 50;
+    private float time = 0;
+    private List<float?[]> pointsWay;
     private bool move = false;
     private float thetha1, thetha2, thetha3, thetha4, thetha5, thetha6;
 
     // point to calculate ik
-    public float ox, oy , oz = 0;  
-    private float old_ox, old_oy, old_oz;  
+    private float ox, oy, oz;
+    private float old_ox, old_oy, old_oz;
 
-    public bool RobotOperate;
 
-    private float L1 = 177.19f*2.54f;
-    private float L2 = 175.98f*2.54f;
-    private float L3 = 448.51f*2.54f;
-    private float L4 = 142.04f*2.54f;
-    private float L5 = 534.97f*2.54f;
+
+    private float L1 = 177.19f * 2.54f;
+    private float L2 = 175.98f * 2.54f;
+    private float L3 = 448.51f * 2.54f;
+    private float L4 = 142.04f * 2.54f;
+    private float L5 = 534.97f * 2.54f;
     private float L6 = 277.59f * 2.54f;
 
     // to calculate inverse kin manually
@@ -39,66 +42,40 @@ public class InverseKin : MonoBehaviour
     public GameObject POINT;
     public GameObject RobotBase;
     public GameObject configRobot;
-    public float step = 100;
-    public float time = 0;
+    public bool realtime = false;
+
 
     void Start()
     {
-        point = RobotBase.transform.InverseTransformPoint(POINT.transform.position);
-        oy = point.x * 1000;
-        oz = (point.y - 0.4f) * 1000;
-        ox = point.z * 1000;
+        CalculatePoint(POINT);
         old_ox = ox;
         old_oy = oy;
         old_oz = oz;
-        
+    }
 
-}
-    private void FixedUpdate()
+    public void StartMove(GameObject p)
     {
-        point = RobotBase.transform.InverseTransformPoint(POINT.transform.position);
+        CalculatePoint(p);
+        PointColorOk();
+        CalculateVector();
+        old_ox = ox;
+        old_oy = oy;
+        old_oz = oz;
+
+    }
+    private void CalculatePoint(GameObject p)
+    {
+        point = RobotBase.transform.InverseTransformPoint(p.transform.position);
         oy = point.x * 1000;
         oz = (point.y - 0.4f) * 1000;
         ox = point.z * 1000;
-        if (!move && checkNewXYZ())
-        {
-            PointColor();
-            CalculateIK();
-            old_ox = ox;
-            old_oy = oy;
-            old_oz = oz;
-        }
-
+        pointConfig pConf = p.GetComponent<pointConfig>();
+        step = pConf.step;
+        time = pConf.time;
     }
-    private bool checkNewXYZ()
+    public void CalculateVector()
     {
-        if (realtime)//
-        {
-            return true;
-        }
-        else if ((ox == old_ox) && (oy == old_oy) && (oz == old_oz))
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-    public void ChangeStateRobotOperate(bool state)
-    {
-        if (!state)
-        {
-            RobotOperate = true;
-        }
-        else
-        {
-            RobotOperate = false;
-        }
-    }
-    public void CalculateIK()
-    {
-        points = new();
+        pointsWay = new();
         Vector3 start = new Vector3(old_ox, old_oy, old_oz);
         Vector3 current = start;
         Vector3 end = new Vector3(ox, oy, oz);
@@ -107,34 +84,23 @@ public class InverseKin : MonoBehaviour
         print("Дистанция:" + distance);
         float traveled = 0f;
         float _step = step;
-        if (!realtime)
+        while (traveled < distance)
         {
-            while (traveled < distance)
-            {
-                float sizeVector = Mathf.Min(_step, distance - traveled);// раст между кажд точкой
-                current += direction * sizeVector;
-                ox = current.x;
-                oy = current.y;
-                oz = current.z;
-                CalculateInverseKinematics();
-                traveled += sizeVector;
-            }
-            StartCoroutine(ModifyRobot(points));
-        }
-        else
-        {
+            float sizeVector = Mathf.Min(_step, distance - traveled);// раст между кажд точкой
+            current += direction * sizeVector;
+            ox = current.x;
+            oy = current.y;
+            oz = current.z;
             CalculateInverseKinematics();
-            ModifyRobotRealtime();
+            traveled += sizeVector;
         }
-        
+        StartCoroutine(ModifyRobot(pointsWay));
+
     }
     public void CalculateInverseKinematics()
     {
         try
         {
-            print("start");
-            Stopwatch time = new Stopwatch();
-            time.Start();
             // Transformation matrix of the ik point
             /*
             Matrix4x4 T = new Matrix4x4(new Vector4(1, 0, 0, ox),
@@ -224,33 +190,27 @@ public class InverseKin : MonoBehaviour
             thetha3 = -thetha3 + 90;
             if (checkRotate())
             {
-                if (!realtime)
-                {
-                    addPointsList();
-                }
-                
-                print("End");
-                time.Stop();
-                print("ВРЕМЯ АЛГОРИТМА:" + time.ElapsedTicks);
+                addPointsList();
+
             }
             else
             {
                 UnityEngine.Debug.LogWarning("Выход за пределы расчетов!");
-                POINT.GetComponent<Renderer>().material.color = Color.red;
+                PointColorEr();
 
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
-             UnityEngine.Debug.LogError("Ошибка в расчетах ИК!"+e);
+            UnityEngine.Debug.LogError("Ошибка в расчетах ИК!" + e);
         }
-        
-         
+
+
     }
 
     bool checkRotate()
     {
-        if (float.IsNaN(thetha1) || float.IsNaN(thetha2) || float.IsNaN(thetha3)|| float.IsNaN(thetha4) ||
+        if (float.IsNaN(thetha1) || float.IsNaN(thetha2) || float.IsNaN(thetha3) || float.IsNaN(thetha4) ||
         float.IsNaN(thetha5) || float.IsNaN(thetha6))
         {
             return false;
@@ -260,113 +220,94 @@ public class InverseKin : MonoBehaviour
             return true;
         }
     }
-   
-    public void RobotStop() // stop the robot
-    {
-        RobotOperate = false;
-    }
+
 
     private IEnumerator ModifyRobot(List<float?[]> points)
     {
-        move = true;
         RobotTest robotIns = configRobot.GetComponent<RobotTest>();
         foreach (float?[] p in points)
         {
-            if (RobotOperate)
-            {
-                robotIns.J1Angle = p[0] ?? robotIns.J1Angle;
-                robotIns.J2Angle = p[1] ?? robotIns.J2Angle;
-                robotIns.J3Angle = p[2] ?? robotIns.J3Angle;
-                robotIns.J4Angle = p[3] ?? robotIns.J4Angle;
-                robotIns.J5Angle = p[4] ?? robotIns.J5Angle;
-                robotIns.J6Angle = p[5] ?? robotIns.J6Angle;
-                yield return new WaitForSeconds(time);
-            }
+
+            robotIns.J1Angle = p[0] ?? robotIns.J1Angle;
+            robotIns.J2Angle = p[1] ?? robotIns.J2Angle;
+            robotIns.J3Angle = p[2] ?? robotIns.J3Angle;
+            robotIns.J4Angle = p[3] ?? robotIns.J4Angle;
+            robotIns.J5Angle = p[4] ?? robotIns.J5Angle;
+            robotIns.J6Angle = p[5] ?? robotIns.J6Angle;
+            yield return new WaitForSeconds(time);
 
         }
-        move = false;
+        RobotMoveEnd.Invoke();
+        yield break;
     }
-    void ModifyRobotRealtime()
-    {
-        RobotTest robotIns = configRobot.GetComponent<RobotTest>();
-        robotIns.J1Angle = thetha1;
-        robotIns.J2Angle = thetha2;
-        robotIns.J3Angle = thetha3;
-        robotIns.J4Angle = thetha4;
-        robotIns.J5Angle = thetha5;
-        robotIns.J6Angle = thetha6;
-    }
-    float?[] oldPoints = new float?[6];
     void addPointsList()
     {
         float?[] angles = { null, null, null, null, null, null };
         if (thetha1 >= -175 & thetha1 <= 175)
         {
             angles[0] = thetha1;
-            oldPoints[0] = thetha1;
         }
         else
         {
             UnityEngine.Debug.LogWarning("ОГР А1");
+            PointColorEr();
         }
         if (thetha2 >= 20 && thetha2 <= 140)
         {
             angles[1] = thetha2;
-            oldPoints[1] = thetha2;
         }
         else
         {
             UnityEngine.Debug.LogWarning("ОГР А2");
+            PointColorEr();
         }
         if (thetha3 <= 140 && thetha3 >= 20)
         {
             angles[2] = thetha3;
-            oldPoints[2] = thetha3;
         }
         else
         {
             UnityEngine.Debug.LogWarning("ОГР А3");
+            PointColorEr();
         }
         if (thetha4 >= -180 && thetha4 <= 180)
         {
             angles[3] = thetha4;
-            oldPoints[3] = thetha4;
         }
         else
         {
             UnityEngine.Debug.LogWarning("ОГР А4");
+            PointColorEr();
         }
         if (thetha5 >= -105 && thetha5 <= 105)
         {
             angles[4] = thetha5;
-            oldPoints[4] = thetha5;
         }
         else
         {
             UnityEngine.Debug.LogWarning("ОГР А5");
+            PointColorEr();
         }
         if (thetha6 >= -360 && thetha6 <= 360)
         {
             angles[5] = thetha6;
-            oldPoints[5] = thetha6;
         }
         else
         {
             UnityEngine.Debug.LogWarning("ОГР А6");
+            PointColorEr();
         }
-        points.Add(angles);
+        pointsWay.Add(angles);
     }
 
-    private void PointColor()
+    private void PointColorEr()
     {
         Renderer rend = POINT.GetComponent<Renderer>();
-        if (rend.material.color == Color.white)
-        {
-            rend.material.color = Color.red;
-        }
-        else
-        {
-            rend.material.color = Color.white;
-        }
+        rend.material.color = Color.red;
+    }
+    private void PointColorOk()
+    {
+        Renderer rend = POINT.GetComponent<Renderer>();
+        rend.material.color = Color.white;
     }
 }
